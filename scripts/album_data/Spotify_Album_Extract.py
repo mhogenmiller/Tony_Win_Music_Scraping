@@ -16,8 +16,43 @@ os.environ['SPOTIPY_CLIENT_SECRET'] = '2babfb37534e415aa32d10bb77eedbdb'
 
 #### Input Spotify URIs to query album data ####
 
+#
+# def Get_Album_Info(album_uris):
+#     '''
+#
+#     :param album_uris: list of uris pertaining to the musical albums. These URIs can be found using the Spotify app (R click on album -> share -> copy uri)
+#     :return: A pandas dataframe containing data on musical albums that won Tony awards.
+#     '''
+#
+#     sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
+#
+#     uri = []
+#     name = []
+#     pop = []
+#     release_date = []
+#     markets = []
+#     album_tracks =[]
+#     track_uris = []
+#     names =[]
+#
+#
+#     for i in album_uris:
+#         album_info = sp.album(i)
+#         uri.append(album_info['uri'])
+#         name.append(album_info['name'])
+#         pop.append(album_info['popularity'])
+#         release_date.append(album_info['release_date'])
+#         markets.append(album_info['available_markets'])
+#         for track in album_info['tracks']['items']:
+#             album_tracks.append(track['uri'])
+#         track_uris.append(album_tracks)
+#
+# #### Creating pandas dataframe with information about fields desired ####
+#     prelim_album_dataset = pd.DataFrame({'uri': uri, 'Name': name, 'Popularity': pop,'Release Date': release_date, 'Available Markets': markets, 'Tracks': track_uris})
+#     return prelim_album_dataset
 
-def Get_Album_Info(album_uris):
+
+def Get_Albums_and_Track_Names(album_uris):
     '''
 
     :param album_uris: list of uris pertaining to the musical albums. These URIs can be found using the Spotify app (R click on album -> share -> copy uri)
@@ -26,26 +61,28 @@ def Get_Album_Info(album_uris):
 
     sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
-    uri = []
-    name = []
+    album_tracks =[]
+    names =[]
+    uri =[]
     pop = []
     release_date = []
     markets = []
-    track_uris = []
-
     for i in album_uris:
         album_info = sp.album(i)
-        uri.append(album_info['uri'])
-        name.append(album_info['name'])
-        pop.append(album_info['popularity'])
-        release_date.append(album_info['release_date'])
-        markets.append(album_info['available_markets'])
         for track in album_info['tracks']['items']:
-            track_uris.append(track['uri'])
+            album_tracks.append(track['uri'])
+            names.append(album_info['name'])
+            uri.append(album_info['uri'])
+            pop.append(album_info['popularity'])
+            release_date.append(album_info['release_date'])
+            markets.append(album_info['available_markets'])
 
 #### Creating pandas dataframe with information about fields desired ####
-    prelim_album_dataset = pd.DataFrame({'uri': [uri], 'Name': [name], 'Popularity': [pop],'Release Date': [release_date], 'Available Markets': [markets], 'Tracks': [track_uris]})
-    return prelim_album_dataset
+    just_album_track = pd.DataFrame({'uri':uri, 'names': names, 'track': album_tracks, 'popularity':pop, 'release_date':release_date, 'market':markets})
+    return just_album_track
+
+
+
 
 
 
@@ -58,21 +95,22 @@ def Get_Track_Info(track_uris):
 
     sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
+
     id = []
     name = []
     artists = []
     popularity = []
     duration_ms = []
+
     for i in track_uris:
         track_info = sp.track(i)
         id.append(track_info['id'])
         name.append(track_info['name'])
-        artists.append(track_info['artists'][0])
+        artists.append(track_info['artists'][0]['name'])
         popularity.append(track_info['popularity'])
         duration_ms.append(track_info['duration_ms'])
-
     prelim_track_dataset = pd.DataFrame(
-        {'id': id, 'Name': name, 'Popularity': popularity, 'Artists': artists[0]['name'],
+        {'id': id, 'Name': name, 'Popularity': popularity, 'Artists': artists,
          'Duration MS': duration_ms})
     return prelim_track_dataset
 
@@ -157,16 +195,17 @@ def main():
 'spotify:album:2RLYvCLS2sE77j6Vl8FVfc',
 'spotify:album:1J1yxODbNlqKbwRqJxYJUP'
     ]
-    spotify_album_data = Get_Album_Info(album_list)
+    just_albumsandtracks = Get_Albums_and_Track_Names(album_list)
     track_uris = spotify_album_data.iloc[:, 5][0]
     track_data = Get_Track_Info(track_uris)
     track_analytics = Get_Track_Analytics(track_uris)
 
 
-    #Now, convert these to Excel spreadsheets#
-    spotify_album_data.to_excel("../../Musical_Album_Info_Spotify.xls")
-    track_data.to_excel("../../Musical_Track_Info_Spotify.xls")
-    track_analytics.to_excel("../../Musical_Track_Analytical_Metrics_Spotify.xls")
+    # # #Now, convert these to Excel spreadsheets#
+    spotify_album_data.to_excel("../../Data/Musical_Album_Info_Spotify.xls")
+    track_data.to_excel("../../Data/Musical_Track_Info_Spotify.xls")
+    track_analytics.to_excel("../../Data/Musical_Track_Analytical_Metrics_Spotify.xls")
+    just_albumsandtracks.to_excel("../../Data/albumsandtracks.xls")
 
     print("Returning information on these albums took", time.time() - start_time, " seconds to run.")
 
